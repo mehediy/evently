@@ -32,10 +32,11 @@ import { IEvent } from "@/lib/database/models/event.model";
 type EventFormProps = {
   userId: string;
   type: "Create" | "Update";
-  event: IEvent;
+  event?: IEvent;
+  eventId?: string;
 };
 
-const EventForm = ({ userId, type, event }: EventFormProps) => {
+const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
   // 1. Define your form.
   const [files, setFiles] = useState<File[]>([]);
   const initialValues =
@@ -87,16 +88,21 @@ const EventForm = ({ userId, type, event }: EventFormProps) => {
       }
     }
     if (type === "Update") {
+      if (!eventId) {
+        router.back();
+        return;
+      }
+
       try {
         const updatedEvent = await updateEvent({
-          event: { ...values, imageUrl: uploadedImageUrl, _id: event._id },
           userId,
-          path: `/events/${event._id}`,
+          event: { ...values, imageUrl: uploadedImageUrl, _id: eventId },
+          path: `/events/${eventId}`,
         });
 
         if (updatedEvent) {
           form.reset();
-          router.push(`/events/${event._id}`);
+          router.push(`/events/${updatedEvent._id}`);
         }
       } catch (error) {
         console.log(error);

@@ -22,7 +22,12 @@ const UpdateEvent = async ({ params: { id } }: UpdateEventProps) => {
         </h3>
       </section>
       <div className="wrapper">
-        <EventForm userId={userId} type="Update" event={event} />
+        <EventForm
+          userId={userId}
+          type="Update"
+          event={event}
+          eventId={event._id}
+        />
       </div>
     </>
   );
