@@ -26,17 +26,27 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Checkbox } from "../ui/checkbox";
 import { useUploadThing } from "@/lib/uploadthing";
 import { useRouter } from "next/navigation";
-import { createEvent } from "@/lib/actions/event.actions";
+import { createEvent, updateEvent } from "@/lib/actions/event.actions";
+import { IEvent } from "@/lib/database/models/event.model";
 
 type EventFormProps = {
   userId: string;
   type: "Create" | "Update";
+  event: IEvent;
 };
 
-const EventForm = ({ userId, type }: EventFormProps) => {
+const EventForm = ({ userId, type, event }: EventFormProps) => {
   // 1. Define your form.
   const [files, setFiles] = useState<File[]>([]);
-  const initialValues = eventDefaultValues;
+  const initialValues =
+    event && type === "Update"
+      ? {
+          ...event,
+          startDateTime: new Date(event.startDateTime),
+          endDateTime: new Date(event.endDateTime),
+        }
+      : eventDefaultValues;
+
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
   const form = useForm<z.infer<typeof eventFormSchema>>({
@@ -60,19 +70,37 @@ const EventForm = ({ userId, type }: EventFormProps) => {
       uploadedImageUrl = uploadedImages[0].url;
     }
 
-    try {
-      const newEvent = await createEvent({
-        event: { ...values, imageUrl: uploadedImageUrl },
-        userId,
-        path: "/profile",
-      });
+    if (type === "Create") {
+      try {
+        const newEvent = await createEvent({
+          event: { ...values, imageUrl: uploadedImageUrl },
+          userId,
+          path: "/profile",
+        });
 
-      if (newEvent) {
-        form.reset();
-        router.push(`/events/${newEvent._id}`);
+        if (newEvent) {
+          form.reset();
+          router.push(`/events/${newEvent._id}`);
+        }
+      } catch (error) {
+        console.log(error);
       }
-    } catch (error) {
-      console.log(error);
+    }
+    if (type === "Update") {
+      try {
+        const updatedEvent = await updateEvent({
+          event: { ...values, imageUrl: uploadedImageUrl, _id: event._id },
+          userId,
+          path: `/events/${event._id}`,
+        });
+
+        if (updatedEvent) {
+          form.reset();
+          router.push(`/events/${event._id}`);
+        }
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
   return (
